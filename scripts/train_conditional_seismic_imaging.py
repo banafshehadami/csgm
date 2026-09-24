@@ -24,10 +24,18 @@ def train(args):
 
     # Setting default device (cpu/cuda) depending on CUDA availability and
     # input arguments.
+    # if torch.cuda.is_available() and args.cuda > -1:
+    #     device = torch.device('cuda:' + str(args.cuda))
+    # else:
+    #     device = torch.device('cpu')
     if torch.cuda.is_available() and args.cuda > -1:
         device = torch.device('cuda:' + str(args.cuda))
+    elif torch.backends.mps.is_available():
+        device = torch.device('mps')
     else:
         device = torch.device('cpu')
+
+    print("Using device:", device)
 
     # Load the dataset.
     dset_train, dset_val, x_normalizer, y_normalizer = get_seismic_dataset()
@@ -163,9 +171,20 @@ def train(args):
 
         if os.path.isfile(file_to_load):
             if device == torch.device('cpu'):
-                checkpoint = torch.load(file_to_load, map_location='cpu')
+                checkpoint = torch.load(
+                    file_to_load,
+                    map_location='cpu',
+                    weights_only=False
+                )
             else:
-                checkpoint = torch.load(file_to_load)
+                checkpoint = torch.load(
+                    file_to_load,
+                    weights_only=False
+                )
+            # if device == torch.device('cpu'):
+            #     checkpoint = torch.load(file_to_load, map_location='cpu')
+            # else:
+            #     checkpoint = torch.load(file_to_load)
 
             model.load_state_dict(checkpoint['model_state_dict'])
             train_obj = checkpoint["train_obj"]
